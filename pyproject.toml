@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "breeders-cup-automation"
+version = "0.1.0"
+description = "Year-specific Breeders' Cup research workbook automation"
+requires-python = ">=3.11"
+dependencies = ["openpyxl>=3.1,<4", "beautifulsoup4>=4.12,<5"]
+
+[project.scripts]
+breeders-cup = "breeders_cup.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

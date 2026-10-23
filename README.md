@@ -1,0 +1,147 @@
+# Breeders Cup Automation
+
+## First-time setup after cloning
+
+Requires Python 3.11 or newer on Windows.
+
+```powershell
+py -3 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -e .
+```
+
+Copy your reference workbook to `templates/2024 Breeders Cup Final.xlsx`.
+The code requires this local file; Excel workbooks are excluded from Git.
+See `templates/README.md`. No credentials are needed for the public data sources.
+
+## Normal yearly run
+
+Run from the project directory:
+
+```powershell
+.\.venv\Scripts\python.exe -m breeders_cup.cli
+```
+
+Equivalent explicit command:
+
+```powershell
+.\.venv\Scripts\python.exe -m breeders_cup.cli update
+```
+
+The year defaults to the current Los Angeles calendar year. The script creates
+`generated` if needed and maintains **one production Excel file per year**:
+`generated/Breeders Cup YYYY.xlsx` (for example, `Breeders Cup 2026.xlsx`).
+If it does not exist it is created; if it exists its rows are refreshed.
+No dated versions, demo versions, backup workbooks or JSON sidecars are created
+in `generated` by this normal run. Existing files from earlier workflows are
+not deleted automatically.
+
+Research snapshots are kept in `data/state/YYYY.json`, reports in
+`data/reports/YYYY.json`, and cached public pedigree pages in `data/cache/pedigree`.
+Deleting `generated` will not delete that research. Deleting a workbook does
+remove manual picks stored in that workbook; preservation applies when the file
+exists during an update.
+
+## Windows batch launcher and Task Scheduler
+
+Double-click `run_breeders_cup.bat`, or run it from a terminal. It always switches
+to its own project directory and uses `.venv\Scripts\python.exe`. It performs
+the normal current-year update and appends output/errors to
+`logs/scheduled-run.log`. Exit code 0 means success; nonzero means failure.
+A missing virtual environment returns code 2 with setup instructions in the log.
+The launcher does not pause or prompt, so it can run unattended.
+
+To create a Windows Task Scheduler task:
+
+1. Open **Task Scheduler** and select **Create Task**.
+2. Choose the trigger and frequency you want.
+3. Add a **Start a program** action with these settings:
+
+   - Program/script: `C:\Windows\System32\cmd.exe`
+   - Add arguments: `/d /c ""C:\Users\demev\Version-Control\Breeders Cup Automation\run_breeders_cup.bat""`
+   - Start in: `C:\Users\demev\Version-Control\Breeders Cup Automation`
+
+4. Under **Settings**, set **If the task is already running** to
+   **Do not start a new instance**. Allow enough runtime for public source lookups.
+5. Close the yearly workbook in Excel before the task runs. Check **Last Run
+   Result** and the log after the first run. `0x0` means success.
+
+If you move or clone the project elsewhere, change the action's path and
+**Start in** folder. The batch file itself needs no path edits. Optional CLI
+arguments can follow the batch filename, such as `--year 2026` or
+`--template "C:\path\2024 Breeders Cup Final.xlsx"`.
+
+## GitHub repository contents
+
+Track source code, tests, example data, dependency files, this README, the batch
+launcher and `templates/README.md`. `.gitignore` excludes all Excel files, the
+local template, `generated`, caches, state, reports, logs, virtual environments
+and local settings. `.gitattributes` keeps the Windows launcher in CRLF format.
+
+Ignoring the template does not remove it locally. Every new clone must install
+its own reference workbook before running the program or workbook tests.
+Research and manual picks are local files; GitHub is not their backup.
+
+## Updating an existing workbook
+
+Hidden horse/race IDs keep picks attached to their horse and race when the
+schedule, post positions, row order or horse count changes. Older files without
+IDs are migrated by matching horse and race names. The script preserves the Pick
+column, its pick colors, entered results and manual results-summary inputs.
+Summary formulas are rebuilt for the current row positions. New horses get new
+rows. A disappearing source row with a saved pick or result is retained; absence
+alone is not treated as a confirmed scratch. An ambiguous identity stops the
+update instead of discarding input.
+
+A confirmed scratch sets the Odds cell to `SCR`. A known numeric post is retained.
+Explicit official withdrawal notices are also honored. When fresh source data
+has no post or odds, the existing value is kept. Final assignment and test modes
+cannot silently hide a saved pick or result; such a conflict stops the update.
+
+Updates are prepared in a temporary workbook and replace the original only after
+validation. If the workbook changed during processing, the update stops. Close
+Excel before running an update so Windows permits replacing the workbook.
+The 2024 reference workbook is never modified.
+
+## Workbook content
+
+The annual tab follows the current year's schedule, with the Classic on Saturday,
+and sorts horses numerically by published post position. Overage is the complete
+alphabetical horse registry. Both include ancestry and Other Ancestors matches,
+confirmed Cup jockeys when verified, and fitted column widths. The annual sheet
+ends with the 2024-style RESULTS SUMMARY. DE/H picks and awards are entered by hand.
+
+The nine unique personal famous-ancestor names are in
+`src/breeders_cup/famous_horses.py`. Matching normalizes punctuation and country
+suffixes and checks collected pedigree tables plus deeper linked parent records.
+Source horse IDs, rather than names alone, join those deeper records. Matched
+names appear once; evidence paths and URLs are retained in the research snapshot.
+No match means no watchlist ancestor was found in available records.
+
+The pipeline uses official Breeders' Cup public page data, racedb, netkeiba and
+Pedigree Query, with source identity checks and caching. Confirmed jockeys use
+official declarations and explicit current-year booking announcements found via
+the Sporting Life news sitemap. Last-race riders and projected riders are not
+substituted. Sources can be incomplete or blocked; reports record coverage and
+unconfirmed riders. Unknown data is not invented.
+
+## Advanced commands
+
+`--year 2026` explicitly chooses a year for `update`. `--cache`, `--template` and
+`--generated-dir` can select local paths. Source event-year validation prevents
+an old schedule being mistaken for a future one.
+
+Existing `collect-build`, `enrich-build` and `build` commands also update their
+selected workbook while preserving picks. Their research/report files now go
+under `data`, not beside the workbook. Normal use should use `update` above.
+
+Testing/export commands remain available only when explicitly requested:
+`--test` limits displayed fields to 13 while retaining every horse in Overage.
+`demo-build --data <research.json> --output <demo.xlsx>` generates labeled
+synthetic posts and random odds; demo data cannot update a production workbook.
+Do not use demo/test exports for the normal yearly run.
+
+## Tests
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest discover -s tests -q
+```

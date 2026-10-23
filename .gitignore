@@ -1,0 +1,38 @@
+# Python environments and build/test output
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+build/
+dist/
+
+# Excel workbooks, including local templates and lock files
+*.xlsx
+*.xls
+*.xlsm
+*.xlsb
+~$*
+/templates/*
+!/templates/README.md
+
+# Local runtime data and output
+/generated/
+/logs/
+*.log
+/data/raw/
+/data/cache/
+/data/state/
+/data/reports/
+
+# Local settings and credentials
+.env
+.env.*
+!.env.example
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store

@@ -1,0 +1,17 @@
+{
+  "year": 2026,
+  "races": [
+    {"id": "demo-turf", "name": "Turf", "date": "2026-10-31", "number": 8, "source_url": "DEMO ONLY - not a verified 2026 schedule"},
+    {"id": "demo-classic", "name": "Classic", "date": "2026-10-31", "number": 9, "source_url": "DEMO ONLY - not a verified 2026 schedule"}
+  ],
+  "horses": [
+    {"id": "demo-alpha", "name": "DEMO Alpha", "color": "Bay", "date_of_birth": "2022-03-01", "father": "DEMO Sire", "source_url": "Synthetic test data"},
+    {"id": "demo-beta", "name": "DEMO Beta", "source_url": "Synthetic test data"}
+  ],
+  "entries": [
+    {"horse_id": "demo-alpha", "race_id": "demo-turf"},
+    {"horse_id": "demo-alpha", "race_id": "demo-classic"},
+    {"horse_id": "demo-beta", "race_id": "demo-classic"}
+  ],
+  "assignments": {}
+}

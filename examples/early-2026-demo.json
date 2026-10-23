@@ -1,0 +1,11 @@
+{
+  "year": 2026,
+  "races": [],
+  "entries": [],
+  "assignments": {},
+  "horses": [
+    {"id": "demo-charlie", "name": "DEMO Charlie", "color": "Chestnut", "father": "DEMO Sire C", "source_url": "Synthetic test data - not a real 2026 contender"},
+    {"id": "demo-alpha", "name": "DEMO Alpha", "color": "Bay", "father": "DEMO Sire A", "date_of_birth": "2022-03-01", "source_url": "Synthetic test data - not a real 2026 contender"},
+    {"id": "demo-beta", "name": "DEMO Beta", "color": "Gray", "father": "DEMO Sire B", "source_url": "Synthetic test data - not a real 2026 contender"}
+  ]
+}
