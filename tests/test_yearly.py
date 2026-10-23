@@ -24,10 +24,10 @@ class YearlyTests(unittest.TestCase):
             w = load_workbook(first)
             self.assertEqual(w.sheetnames, ['2026', 'Overage'])
             self.assertEqual(w['2026'].max_row, 1)
-            self.assertEqual([w['Overage'].cell(r, 6).value for r in range(2, 5)],
+            self.assertEqual([w['Overage'].cell(r, 7).value for r in range(2, 5)],
                              ['Demo Alpha', 'Demo Beta', 'Demo Charlie'])
             self.assertTrue(all(w['Overage'].cell(r, 1).value is None for r in range(2, 5)))
-            self.assertEqual(w['Overage']['I2'].value, 'Bay')
+            self.assertEqual(w['Overage']['J2'].value, 'Bay')
             w.close()
             data['year'] = 2027
             second = Path(tmp) / 'Breeders Cup 2027.xlsx'
@@ -48,6 +48,6 @@ class YearlyTests(unittest.TestCase):
             w = load_workbook(target)
             self.assertEqual(w['Overage'].max_row, 4)
             self.assertEqual(w['Overage']['A2'].value, 'Classic')
-            self.assertEqual(w['Overage']['F4'].value, 'Pending Horse')
+            self.assertEqual(w['Overage']['G4'].value, 'Pending Horse')
             self.assertIsNone(w['Overage']['A4'].value)
             w.close()

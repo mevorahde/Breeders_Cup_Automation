@@ -11,7 +11,7 @@ from openpyxl import load_workbook
 from openpyxl.formula.translate import Translator
 from .pedigree import normalized
 from .core import prepare
-from .workbook import generate,fit_columns
+from .workbook import generate,fit_columns,arrange_columns
 
 
 def current_date():
@@ -168,7 +168,8 @@ def merge_research(data,previous):
 
 def race_rows(sheet):
     stop=next((r[0].row for r in sheet if r[0].value=='RESULTS SUMMARY'),sheet.max_row+1)
-    return [r for r in sheet.iter_rows(min_row=2,max_row=stop-1) if r[5].value]
+    name_col=next(c.column-1 for c in sheet[1] if c.value=='Name')
+    return [r for r in sheet.iter_rows(min_row=2,max_row=stop-1) if r[name_col].value]
 
 
 def capture(book,data,previous):
@@ -247,6 +248,7 @@ def upsert(template,data,output,previous=None,final=False,test_generation=False,
             old.close()
             raise ValueError('Existing workbook belongs to a different year')
         try:
+            arrange_columns(old,legacy=True)
             locked,frozen_overage=freeze_past_races(data,old,previous,as_of or current_date())
             saved=capture(old,data,previous)
         except Exception:
@@ -299,7 +301,7 @@ def upsert(template,data,output,previous=None,final=False,test_generation=False,
     try:
         with tempfile.TemporaryDirectory(dir=output.parent,prefix='.updating-') as directory:
             temporary=Path(directory)/output.name
-            count=generate(template,data,temporary,final,test_generation)
+            count=generate(template,data,temporary,final,test_generation,_legacy_layout=True)
             book=load_workbook(temporary)
             restored=set()
             for sn in (str(data['year']),'Overage'):
@@ -331,6 +333,7 @@ def upsert(template,data,output,previous=None,final=False,test_generation=False,
             if any(key not in restored and any(cells[c].value is not None for c in (3,5)) for key,cells in saved.items()):
                 book.close()
                 raise ValueError('Update would hide a saved pick/result; workbook was not changed')
+            arrange_columns(book)
             fit_columns(book[str(data['year'])],book['Overage'])
             book.save(temporary);book.close()
             if old:

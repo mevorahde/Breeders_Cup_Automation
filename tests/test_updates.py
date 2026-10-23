@@ -10,6 +10,7 @@ import shutil
 from openpyxl import load_workbook
 from datetime import date
 from breeders_cup.updates import upsert,save_state,merge_research
+from breeders_cup.workbook import arrange_columns
 
 ROOT=Path(__file__).resolve().parents[1]
 
@@ -31,6 +32,8 @@ class UpdateTests(unittest.TestCase):
             summary=next(r[0].row for r in s if r[0].value=='RESULTS SUMMARY')
             s.cell(summary+1,2).value=7
             w['Overage']['E2']='H'
+            # Exercise a refresh migrating an existing workbook's old layout.
+            arrange_columns(w,legacy=True)
             w.save(target);w.close()
             newer=copy.deepcopy(self.data)
             newer['horses'].append({'id':'new','name':'A New Horse','source_url':'test'})
@@ -38,9 +41,10 @@ class UpdateTests(unittest.TestCase):
             next(e for e in newer['entries'] if e['horse_id']=='demo-alpha' and e['race_id']=='demo-classic').update(scratched=True,post='SCR')
             updated,_=upsert(self.template,newer,target,previous=initial)
             w=load_workbook(target);s=w['2026']
+            self.assertEqual([s.cell(1,c).value for c in (5,6,7)],['Pick','Date of Birth','Name'])
             row=next(r for r in s if s.cell(r[0].row,19).value=='demo-alpha' and s.cell(r[0].row,20).value=='demo-classic')
             self.assertEqual([row[c-1].value for c in (2,3,4,5)],[4,2,'SCR','DE'])
-            self.assertTrue(any(r[4].value=='H' and r[5].value=='Demo Alpha' for r in w['Overage']))
+            self.assertTrue(any(r[4].value=='H' and r[6].value=='Demo Alpha' for r in w['Overage']))
             header=next(r[0].row for r in s if r[0].value=='RESULTS SUMMARY')
             self.assertEqual(s.cell(header+1,2).value,7)
             w.close()
@@ -106,7 +110,7 @@ class UpdateTests(unittest.TestCase):
             friday=next(r for r in s if s.cell(r[0].row,20).value=='demo-turf')
             row=friday[0].row
             s.cell(row,5).value='DE';s.cell(row,3).value=1
-            s.cell(row,7).value='Saved Friday Rider'
+            s.cell(row,8).value='Saved Friday Rider'
             header=next(r[0].row for r in s if r[0].value=='RESULTS SUMMARY')
             s.cell(header+1,2).value=1;s.cell(header+1,3).value=2
             before=[s.cell(row,c).value for c in range(1,21)]
@@ -127,7 +131,7 @@ class UpdateTests(unittest.TestCase):
             self.assertEqual([s.cell(header+1,c).value for c in range(1,7)],old_summary)
             saturday=next(r for r in s if s.cell(r[0].row,20).value=='demo-classic' and s.cell(r[0].row,19).value=='demo-alpha')
             self.assertEqual(saturday[3].value,'12-1')
-            self.assertEqual(saturday[6].value,'Changed Saturday Rider')
+            self.assertEqual(saturday[7].value,'Changed Saturday Rider')
             self.assertEqual(len(updated['collection_report']['yearly_update']['past_races_preserved']),1)
             w.close()
             # Even disappearing unpicked Friday rows are retained.
@@ -154,5 +158,5 @@ class UpdateTests(unittest.TestCase):
             w=load_workbook(target)
             self.assertEqual(w['2026']['D3'].value,'8-1')
             self.assertEqual(w['Overage']['D2'].value,'8-1')
-            self.assertNotEqual(w['Overage']['H2'].value,'New trainer')
+            self.assertNotEqual(w['Overage']['I2'].value,'New trainer')
             w.close()

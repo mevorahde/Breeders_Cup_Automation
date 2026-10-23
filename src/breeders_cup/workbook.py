@@ -5,13 +5,48 @@ from pathlib import Path
 import re
 from openpyxl import Workbook, load_workbook
 from openpyxl.styles import Alignment
+from openpyxl.formula.translate import Translator
 from .core import FIELDS, prepare, famous_ancestors, post_order
 from .famous_horses import FAMOUS_HORSES
 from .column_fit import fitted_width
 
-HEADERS = ['BC Race', 'Post', 'Result', 'Odds', 'Pick', 'Name', 'Jockey',
+LEGACY_HEADERS = ['BC Race', 'Post', 'Result', 'Odds', 'Pick', 'Name', 'Jockey',
            'Trainer', 'Color', 'Last Previous Race', 'Father', 'Grandfather(s)',
            'Great Grandfather(s)', 'Other Ancestors', 'Date of Birth']
+HEADERS = LEGACY_HEADERS[:5] + ['Date of Birth'] + LEGACY_HEADERS[5:14]
+
+
+def arrange_columns(book, legacy=False):
+    """Move birth dates for display; retain the template layout during refresh.
+
+    Summary cells stay in their established positions. Hidden source/identity
+    columns are never moved. Both layouts can be read for existing workbooks.
+    """
+    desired = LEGACY_HEADERS if legacy else HEADERS
+    for sheet in book:
+        current = [sheet.cell(1, col).value for col in range(1, 16)]
+        if current == desired:
+            continue
+        if current not in (LEGACY_HEADERS, HEADERS) and current[1:] not in (LEGACY_HEADERS[1:], HEADERS[1:]):
+            raise ValueError('Unrecognized workbook columns; workbook was not changed')
+        # A demo may label the first header BC Race (DEMO).
+        current[0] = 'BC Race'
+        mapping = {col: current.index(label) + 1 for col, label in enumerate(desired, 1)}
+        stop = next((r[0].row for r in sheet if r[0].value == 'RESULTS SUMMARY'), sheet.max_row + 1)
+        for row in range(1, stop):
+            cells = {col: copy(sheet.cell(row, col)) for col in range(6, 16)}
+            for col in range(6, 16):
+                source = cells[mapping[col]]
+                target = sheet.cell(row, col)
+                # Set a private style before assigning dates: openpyxl may change
+                # a General format on assignment, otherwise mutating shared styles.
+                target._style = copy(source._style)
+                target.value = (Translator(source.value, origin=source.coordinate).translate_formula(target.coordinate)
+                                if source.data_type == 'f' else source.value)
+                target.data_type = source.data_type
+                target.comment = copy(source.comment)
+                target.hyperlink = copy(source.hyperlink)
+        sheet.freeze_panes = 'F2' if legacy else 'G2'
 
 
 def title_case_details(value):
@@ -60,7 +95,7 @@ def text(cell, value):
 def styled_row(target, row, values, source, source_row):
     target.row_dimensions[row].height = source.row_dimensions[source_row].height
     for col, value in enumerate(values, 1):
-        if 6 <= col <= 14:
+        if source_row != 1 and 6 <= col <= 14:
             value = title_case_details(value)
         if col == 9:
             value = display_color(value)
@@ -138,7 +173,7 @@ def fit_columns(sheet,overage):
             target.column_dimensions[letter].bestFit=True
 
 
-def generate(template, data, output, final=False, test_generation=False):
+def generate(template, data, output, final=False, test_generation=False, *, _legacy_layout=False):
     if final and test_generation:
         raise ValueError('Test generation cannot be combined with final race assignments')
     races, horses, entries = prepare(data, final)
@@ -149,7 +184,7 @@ def generate(template, data, output, final=False, test_generation=False):
         raise FileExistsError(f'Output already exists: {output}')
     original = load_workbook(template)
     source = original['2024']
-    if [source.cell(1, c).value for c in range(1, 15)] != HEADERS[:14]:
+    if [source.cell(1, c).value for c in range(1, 15)] != LEGACY_HEADERS[:14]:
         raise ValueError('Template 2024 headers differ from expected layout')
     result = Workbook()
     if data.get('demo'):
@@ -167,7 +202,7 @@ def generate(template, data, output, final=False, test_generation=False):
         target.sheet_properties.pageSetUpPr = copy(source.sheet_properties.pageSetUpPr)
         target.page_setup = copy(source.page_setup)
         target.print_title_rows = '1:1'
-        styled_row(target, 1, HEADERS, source, 1)
+        styled_row(target, 1, LEGACY_HEADERS, source, 1)
         if data.get('demo'):
             text(target['A1'],'BC Race (DEMO)')
     row = 2
@@ -242,6 +277,8 @@ def generate(template, data, output, final=False, test_generation=False):
         target.print_area = f'A1:O{target.max_row}'
     # Excel's bestFit flag does not calculate a stored width. Estimate the text
     # width at the retained nine-point template font and save explicit widths.
+    if not _legacy_layout:
+        arrange_columns(result)
     fit_columns(sheet,overage)
     output.parent.mkdir(parents=True, exist_ok=True)
     # Exclusive creation also protects against another run creating the same output.
