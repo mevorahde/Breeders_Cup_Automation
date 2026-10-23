@@ -227,3 +227,7 @@ to its chosen output.
 ```powershell
 .\.venv\Scripts\python.exe -m unittest discover -s tests -q
 ```
+
+## License
+
+Licensed under the [MIT License](LICENSE).
