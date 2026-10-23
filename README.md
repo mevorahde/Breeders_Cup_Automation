@@ -85,6 +85,14 @@ Ignoring the template does not remove it locally. Every new clone must install
 its own reference workbook before running the program or workbook tests.
 Research and manual picks are local files; GitHub is not their backup.
 
+### Dependency update pull requests
+
+Dependabot checks Python dependency manifests weekly on Mondays at 9:00 AM
+America/Los_Angeles, configured in `.github/dependabot.yml`. Version updates
+are grouped into a `python-dependencies` pull request, with at most five open
+version-update PRs. Dependabot alerts and security-fix PRs are enabled on GitHub.
+Review and merge updates manually; automatic merging is not configured.
+
 ## Updating an existing workbook
 
 Race dates are guarded using the current **America/Los_Angeles** calendar date.
