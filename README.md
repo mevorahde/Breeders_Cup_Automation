@@ -50,26 +50,6 @@ the normal current-year update and appends output/errors to
 A missing virtual environment returns code 2 with setup instructions in the log.
 The launcher does not pause or prompt, so it can run unattended.
 
-### Installed October 2026 task
-
-The local Windows task **Breeders Cup Automation - October 26-31 2026** runs
-this launcher at **9:00 AM Pacific every day from Monday, October 26 through
-Saturday, October 31, 2026**, inclusive: six scheduled runs. Its first run is
-October 26 at 9:00 AM, and its trigger expires at the end of October 31.
-
-- The task runs only while David is signed into Windows; the screen may be locked.
-- It can wake the computer from sleep, subject to Windows power settings, and
-  runs on battery power. The computer must be powered on and have internet access
-  to retrieve fresh source data.
-- Overlapping instances are ignored, with a two-hour execution limit. Missed
-  start times are not automatically run later.
-- Close the production workbook before 9:00 AM so the script can replace it.
-- Check **Last Run Result** in Task Scheduler and `logs/scheduled-run.log`.
-  `0x0` / exit code 0 means success.
-
-This task is installed on this computer; cloning the repository does not install
-it elsewhere. Its paths use `C:\Users\demev\Version-Control\Breeders Cup Automation`.
-
 ### Creating or recreating a task
 
 To create a Windows Task Scheduler task:
@@ -78,9 +58,11 @@ To create a Windows Task Scheduler task:
 2. Choose the trigger and frequency you want.
 3. Add a **Start a program** action with these settings:
 
-   - Program/script: `C:\Windows\System32\cmd.exe`
-   - Add arguments: `/d /c ""C:\Users\demev\Version-Control\Breeders Cup Automation\run_breeders_cup.bat""`
-   - Start in: `C:\Users\demev\Version-Control\Breeders Cup Automation`
+   - Program/script: `cmd.exe`
+   - Add arguments: `/d /c ""<repository-folder>\run_breeders_cup.bat""`
+   - Start in: `<repository-folder>`
+
+   Replace `<repository-folder>` with the folder where you cloned the repository.
 
 4. Under **Settings**, set **If the task is already running** to
    **Do not start a new instance**. Allow enough runtime for public source lookups.
@@ -90,7 +72,7 @@ To create a Windows Task Scheduler task:
 If you move or clone the project elsewhere, change the action's path and
 **Start in** folder. The batch file itself needs no path edits. Optional CLI
 arguments can follow the batch filename, such as `--year 2026` or
-`--template "C:\path\2024 Breeders Cup Final.xlsx"`.
+`--template "reference/2024 Breeders Cup Final.xlsx"`.
 
 ## GitHub repository contents
 
@@ -224,23 +206,21 @@ Testing/export commands remain available only when explicitly requested:
 synthetic posts and random odds; demo data cannot update a production workbook.
 Do not use demo/test exports for the normal yearly run.
 
-### Desktop DEMO2 preview
+### Demo previews
 
-The latest local preview is
-`C:\Users\demev\OneDrive\Desktop\Breeders Cup 2026 - DEMO2.xlsx`, separate from
-the production file in `generated`. It uses the saved 2026 research snapshot
-with the current formatting, schedule and verified horse details. It contains
-a **2026** tab with at most **13 horses per race** and an **Overage** tab with
-all **208 horses** in that snapshot. Demo post positions run in order from 1
-within each race; odds are generated sample values. They are not official draws
-or odds. Unconfirmed Breeders' Cup jockeys remain blank.
+Choose a preview output outside `generated` to keep it separate from production.
+Previews use a saved research snapshot with the current formatting, schedule and
+verified horse details. The annual tab contains at most **13 horses per race**;
+**Overage** retains every horse in the snapshot. Demo post positions run in order
+from 1 within each race; odds are generated sample values. They are not official
+draws or odds. Unconfirmed Breeders' Cup jockeys remain blank.
 
 Deleting a preview does not affect production data or manual picks in the
 production workbook. Regenerating a preview uses the formatting currently in
 the script; a previously created preview does not update itself. Demo creation
 does not fetch fresh source data unless a separate collection/update is run.
 The `demo-build` CLI also creates `.data.json` and `.report.json` sidecars next
-to its chosen output; the Desktop preview above was generated as a workbook only.
+to its chosen output.
 
 ## Tests
 

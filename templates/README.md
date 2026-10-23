@@ -10,7 +10,7 @@ the directory and installation instructions exist in a fresh clone.
 To use a different local path, run:
 
 ```powershell
-.\.venv\Scripts\python.exe -m breeders_cup.cli update --template "C:\path\2024 Breeders Cup Final.xlsx"
+.\.venv\Scripts\python.exe -m breeders_cup.cli update --template "reference/2024 Breeders Cup Final.xlsx"
 ```
 
 The automated workbook tests also require this local reference file. The program
