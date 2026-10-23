@@ -8,7 +8,7 @@ from openpyxl.styles import Alignment
 from openpyxl.formula.translate import Translator
 from .core import FIELDS, prepare, famous_ancestors, post_order
 from .famous_horses import FAMOUS_HORSES
-from .column_fit import fitted_width
+from .column_fit import fitted_width, text_pixels
 
 LEGACY_HEADERS = ['BC Race', 'Post', 'Result', 'Odds', 'Pick', 'Name', 'Jockey',
            'Trainer', 'Color', 'Last Previous Race', 'Father', 'Grandfather(s)',
@@ -163,14 +163,54 @@ def results_summary(sheet, row, races, source):
         sheet[f'{col}{low}']=f'=IF(COUNT({col}{first}:{col}{last})=0,"",SUM({col}{first}:{col}{last}))'
 
 
-def fit_columns(sheet,overage):
-    """Fit each view to its own text, allowing old/template widths to shrink."""
+def fit_columns(sheet,overage,protected_rows=None):
+    """Fit compact columns and wrap outliers instead of widening every row."""
+    limits={'Name':17,'Jockey':18,'Trainer':17,'Last Previous Race':30,
+            'Father':17,'Grandfather(s)':23,'Great Grandfather(s)':45,
+            'Other Ancestors':50}
+    digit=text_pixels('0','Calibri',11,False,False) or 7
     for target in (sheet,overage):
+        protected=(protected_rows or {}).get(target.title,set())
         for col in range(1,16):
             letter=target.cell(1,col).column_letter
-            target.column_dimensions[letter].width=fitted_width(
-                [row[0] for row in target.iter_rows(min_col=col,max_col=col)])
+            cells=[row[0] for row in target.iter_rows(min_col=col,max_col=col)]
+            width=min(fitted_width(cells),limits.get(target.cell(1,col).value,255))
+            # Finished races retain their saved row formatting without clipping.
+            if protected:
+                width=max(width,fitted_width([c for c in cells if c.row in protected]))
+            target.column_dimensions[letter].width=width
             target.column_dimensions[letter].bestFit=True
+        for row in target.iter_rows(min_row=2):
+            if not target.cell(row[0].row,19).value or row[0].row in protected:
+                continue
+            lines=1
+            for cell in row[:15]:
+                if not isinstance(cell.value,str) or cell.data_type=='f':
+                    continue
+                font=cell.font
+                def measure(value):
+                    return text_pixels(value,font.name or 'Calibri',float(font.sz or 11),bool(font.b),bool(font.i))
+                available=max(1,target.column_dimensions[cell.column_letter].width*digit-5)
+                count=0
+                for paragraph in cell.value.split('\n'):
+                    current=''
+                    count+=1
+                    for word in paragraph.split():
+                        candidate=(current+' '+word).strip()
+                        if current and measure(candidate)>available:
+                            count+=1
+                            current=word
+                        else:
+                            current=candidate
+                        if measure(current)>available:
+                            import math
+                            count+=math.ceil(measure(current)/available)-1
+                            current=''
+                alignment=copy(cell.alignment)
+                alignment.wrap_text=count>1
+                cell.alignment=alignment
+                lines=max(lines,count)
+            target.row_dimensions[row[0].row].height=12*lines
 
 
 def generate(template, data, output, final=False, test_generation=False, *, _legacy_layout=False):

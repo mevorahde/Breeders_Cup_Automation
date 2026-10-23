@@ -135,9 +135,10 @@ The annual tab follows the current year's schedule, with the Classic on Saturday
 and sorts horses numerically by published post position. Overage is the complete
 alphabetical horse registry. Both include ancestry and Other Ancestors matches,
 confirmed Cup jockeys when verified, and fitted column widths. Each tab sizes
-its columns to its own longest displayed value, allowing widths to shrink as
-well as expand. Windows runs measure the actual font text, rather than retaining
-wider template widths. The annual sheet
+its columns to its own text, with compact width limits for horse details.
+Long entries wrap and their rows expand instead of widening every row.
+Windows runs measure the actual font text. Completed race rows keep their
+saved formatting and enough width to display their saved values. The annual sheet
 ends with the 2024-style RESULTS SUMMARY. DE/H picks and awards are entered by hand.
 
 The nine unique personal famous-ancestor names are in

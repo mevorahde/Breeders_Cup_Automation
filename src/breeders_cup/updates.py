@@ -334,7 +334,9 @@ def upsert(template,data,output,previous=None,final=False,test_generation=False,
                 book.close()
                 raise ValueError('Update would hide a saved pick/result; workbook was not changed')
             arrange_columns(book)
-            fit_columns(book[str(data['year'])],book['Overage'])
+            protected={str(data['year']):{r[0].row for r in race_rows(book[str(data['year'])]) if r[19].value in locked},
+                       'Overage':{r[0].row for r in book['Overage'].iter_rows(min_row=2) if r[18].value in frozen_overage}}
+            fit_columns(book[str(data['year'])],book['Overage'],protected)
             book.save(temporary);book.close()
             if old:
                 old.close();old=None
