@@ -50,6 +50,28 @@ the normal current-year update and appends output/errors to
 A missing virtual environment returns code 2 with setup instructions in the log.
 The launcher does not pause or prompt, so it can run unattended.
 
+### Installed October 2026 task
+
+The local Windows task **Breeders Cup Automation - October 26-31 2026** runs
+this launcher at **9:00 AM Pacific every day from Monday, October 26 through
+Saturday, October 31, 2026**, inclusive: six scheduled runs. Its first run is
+October 26 at 9:00 AM, and its trigger expires at the end of October 31.
+
+- The task runs only while David is signed into Windows; the screen may be locked.
+- It can wake the computer from sleep, subject to Windows power settings, and
+  runs on battery power. The computer must be powered on and have internet access
+  to retrieve fresh source data.
+- Overlapping instances are ignored, with a two-hour execution limit. Missed
+  start times are not automatically run later.
+- Close the production workbook before 9:00 AM so the script can replace it.
+- Check **Last Run Result** in Task Scheduler and `logs/scheduled-run.log`.
+  `0x0` / exit code 0 means success.
+
+This task is installed on this computer; cloning the repository does not install
+it elsewhere. Its paths use `C:\Users\demev\Version-Control\Breeders Cup Automation`.
+
+### Creating or recreating a task
+
 To create a Windows Task Scheduler task:
 
 1. Open **Task Scheduler** and select **Create Task**.
@@ -143,12 +165,41 @@ scheduler sessions where Excel cannot start), measured font widths are used
 as a fallback. The annual sheet
 ends with the 2024-style RESULTS SUMMARY. DE/H picks and awards are entered by hand.
 
+### Display formatting
+
+Both the annual tab and Overage use this visible column order:
+
+BC Race → Post → Result → Odds → Pick → **Date of Birth** → **Name** → Jockey →
+Trainer → Color → Last Previous Race → Father → Grandfather(s) →
+Great Grandfather(s) → Other Ancestors.
+
+- Horse details display in Title Case, retaining country codes, initials and
+  established internal capitals. Picks, scratch codes, source links and hidden
+  identities are not title-cased.
+- Color labels use **DK Bay** for **Dark Bay or Brown** and **Gray** for
+  **Gray or Roan**.
+- Last Previous Race keeps the race name and finishing position, removing
+  periods and the parenthesized date: `Speakeasy S.: 1 (2026-10-03)` becomes
+  `Speakeasy S: 1`.
+- Date of Birth remains a real Excel date, displayed as `mm/dd/yyyy`.
+- Native Excel AutoFit matches double-clicking a column border. It fits the
+  longest entry anywhere in that column on each tab, so shorter entries can
+  still have space beside them. There are no width caps or wrapped entries;
+  all rows stay at 12 points high.
+
+Existing workbooks with Date of Birth at the end are migrated to the new column
+order during refresh, preserving picks, results and the results summary. The
+2024 template keeps its original layout.
+
 The nine unique personal famous-ancestor names are in
 `src/breeders_cup/famous_horses.py`. Matching normalizes punctuation and country
 suffixes and checks collected pedigree tables plus deeper linked parent records.
 Source horse IDs, rather than names alone, join those deeper records. Matched
 names appear once; evidence paths and URLs are retained in the research snapshot.
 No match means no watchlist ancestor was found in available records.
+
+The watchlist is: Mr. Prospector, A.P. Indy, Secretariat, Seattle Slew,
+Seeking the Gold, Pleasant Colony, Affirmed, Alydar and Sunday Silence.
 
 The pipeline uses official Breeders' Cup public page data, racedb, netkeiba and
 Pedigree Query, with source identity checks and caching. Confirmed jockeys use
@@ -172,6 +223,24 @@ Testing/export commands remain available only when explicitly requested:
 `demo-build --data <research.json> --output <demo.xlsx>` generates labeled
 synthetic posts and random odds; demo data cannot update a production workbook.
 Do not use demo/test exports for the normal yearly run.
+
+### Desktop DEMO2 preview
+
+The latest local preview is
+`C:\Users\demev\OneDrive\Desktop\Breeders Cup 2026 - DEMO2.xlsx`, separate from
+the production file in `generated`. It uses the saved 2026 research snapshot
+with the current formatting, schedule and verified horse details. It contains
+a **2026** tab with at most **13 horses per race** and an **Overage** tab with
+all **208 horses** in that snapshot. Demo post positions run in order from 1
+within each race; odds are generated sample values. They are not official draws
+or odds. Unconfirmed Breeders' Cup jockeys remain blank.
+
+Deleting a preview does not affect production data or manual picks in the
+production workbook. Regenerating a preview uses the formatting currently in
+the script; a previously created preview does not update itself. Demo creation
+does not fetch fresh source data unless a separate collection/update is run.
+The `demo-build` CLI also creates `.data.json` and `.report.json` sidecars next
+to its chosen output; the Desktop preview above was generated as a workbook only.
 
 ## Tests
 
