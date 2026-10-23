@@ -83,6 +83,25 @@ Research and manual picks are local files; GitHub is not their backup.
 
 ## Updating an existing workbook
 
+Race dates are guarded using the current **America/Los_Angeles** calendar date.
+When an existing workbook is updated, races dated before today are frozen from
+its saved contents. For example, an October 31 run leaves October 30 race rows,
+row order, formatting, odds, picks, results and race-summary entries unchanged
+while refreshing October 31 races. Today’s races remain live, even if some have
+already finished; this guard operates by day rather than individual finish time.
+No calendar dates are hardcoded, so the same rule applies in future years.
+
+Past race fields are retained even if the source removes entrants or changes
+its historical data. Overage rows for horses entered only in past races are
+preserved too. A horse with a current/future engagement can still update in
+Overage. Shared column widths may expand to fit current data, and combined
+summary totals can recalculate as current-day entries change. The report lists
+frozen races under `yearly_update.past_races_preserved`.
+
+If no workbook exists, all available races are generated normally because there
+are no saved rows to preserve. Keep the yearly workbook between daily runs.
+
+
 Hidden horse/race IDs keep picks attached to their horse and race when the
 schedule, post positions, row order or horse count changes. Older files without
 IDs are migrated by matching horse and race names. The script preserves the Pick
