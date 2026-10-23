@@ -43,6 +43,13 @@ def display_color(value):
             'dk bay': 'DK Bay'}.get(value.strip().casefold(), value)
 
 
+def display_last_race(value):
+    """Keep the race and finish, omitting its parenthesized ISO date."""
+    if not isinstance(value, str):
+        return value
+    return re.sub(r'\s*\(\s*\d{4}-\d{2}-\d{2}\s*\)', '', value).strip()
+
+
 def text(cell, value):
     # Scraped text must remain text, including formula-looking horse names.
     cell.value = value
@@ -57,6 +64,8 @@ def styled_row(target, row, values, source, source_row):
             value = title_case_details(value)
         if col == 9:
             value = display_color(value)
+        if col == 10:
+            value = display_last_race(value)
         cell = target.cell(row, col)
         original = source.cell(source_row, min(col, 14))
         cell.font = copy(original.font)
