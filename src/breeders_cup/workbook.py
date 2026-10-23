@@ -44,10 +44,10 @@ def display_color(value):
 
 
 def display_last_race(value):
-    """Keep the race and finish, omitting its parenthesized ISO date."""
+    """Keep the race and finish, omitting dates and periods."""
     if not isinstance(value, str):
         return value
-    return re.sub(r'\s*\(\s*\d{4}-\d{2}-\d{2}\s*\)', '', value).strip()
+    return re.sub(r'\s*\(\s*\d{4}-\d{2}-\d{2}\s*\)', '', value).replace('.', '').strip()
 
 
 def text(cell, value):
