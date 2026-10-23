@@ -123,6 +123,14 @@ The 2024 reference workbook is never modified.
 
 ## Workbook content
 
+The script discovers the current-year official race-order announcement on
+BreedersCup.com and reads its published schedule tables for track race numbers
+and Eastern post times. It matches exact championship names and validates all
+14 races before applying a schedule. Numbers are never inferred from row order
+or copied from a different year. The source URL and publication date are kept
+in the report under `race_schedule`. If retrieval fails, previously verified
+same-year race numbers are retained; otherwise unpublished numbers stay pending.
+
 The annual tab follows the current year's schedule, with the Classic on Saturday,
 and sorts horses numerically by published post position. Overage is the complete
 alphabetical horse registry. Both include ancestry and Other Ancestors matches,

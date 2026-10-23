@@ -134,6 +134,12 @@ def merge_research(data,previous):
     result=deepcopy(data)
     if not previous or previous.get('year')!=result['year']:
         return result
+    prior_races={r['id']:r for r in previous.get('races',[])}
+    for race in result.get('races',[]):
+        prior=prior_races.get(race['id'])
+        if prior and race.get('number') is None and prior.get('number') is not None and race['date']==prior['date'] and normalized(race['name'])==normalized(prior['name']):
+            for field in ('number','scheduled_at','post_time_et','number_source_url','number_retrieved_at'):
+                if field in prior:race[field]=prior[field]
     old={h['id']:h for h in previous['horses']}
     fields=('grandfathers','great_grandfathers','pedigree_ancestors','pedigree_branches',
             'famous_ancestor_evidence','other_ancestors','date_of_birth','color','father','dam',

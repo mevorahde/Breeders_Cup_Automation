@@ -184,4 +184,5 @@ def collect(year):
                        'Pre-entry payload position values are not treated as confirmed draw positions.',
                        'Last race means latest completed start in the official supplied history, before the Cup date.',
                        'Deeper pedigree enrichment is pending; no inferred ancestors.']}
-    return data
+    from .schedule import enrich_schedule
+    return enrich_schedule(data,html)
