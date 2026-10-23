@@ -50,4 +50,4 @@ def fitted_width(cells):
         for line in text.splitlines():
             maximum=max(maximum,text_pixels(line,font.name or 'Calibri',float(font.sz or 11),bool(font.b),bool(font.i)))
     digit=text_pixels('0','Calibri',11,False,False) or 7
-    return min(255,max(2,(maximum+5)/digit))
+    return min(255,max(2,(maximum+1)/digit))
