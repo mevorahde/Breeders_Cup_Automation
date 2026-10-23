@@ -6,6 +6,7 @@ from openpyxl import Workbook, load_workbook
 from openpyxl.styles import Alignment
 from .core import FIELDS, prepare, famous_ancestors, post_order
 from .famous_horses import FAMOUS_HORSES
+from .column_fit import fitted_width
 
 HEADERS = ['BC Race', 'Post', 'Result', 'Odds', 'Pick', 'Name', 'Jockey',
            'Trainer', 'Color', 'Last Previous Race', 'Father', 'Grandfather(s)',
@@ -85,18 +86,12 @@ def results_summary(sheet, row, races, source):
 
 
 def fit_columns(sheet,overage):
-    """Save explicit fitted widths on both views, including restored manual input."""
-    for col in range(1,16):
-        widths=[]
-        for target in (sheet,overage):
-            for cells in target.iter_rows(min_col=col,max_col=col):
-                value=cells[0].value
-                display='' if cells[0].data_type=='f' else value.strftime('%m/%d/%Y') if isinstance(value,date) else str(value or '')
-                widths.append(sum(0.45 if c in " ilI.,:;'|" else 1.25 if c in 'MW@' else 0.9 for c in display)+2)
-        letter=sheet.cell(1,col).column_letter
-        width=min(255,max(sheet.column_dimensions[letter].width,max(widths,default=0)))
-        for target in (sheet,overage):
-            target.column_dimensions[letter].width=width
+    """Fit each view to its own text, allowing old/template widths to shrink."""
+    for target in (sheet,overage):
+        for col in range(1,16):
+            letter=target.cell(1,col).column_letter
+            target.column_dimensions[letter].width=fitted_width(
+                [row[0] for row in target.iter_rows(min_col=col,max_col=col)])
             target.column_dimensions[letter].bestFit=True
 
 
