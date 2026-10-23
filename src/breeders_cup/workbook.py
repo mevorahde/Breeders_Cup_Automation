@@ -35,6 +35,14 @@ def title_case_details(value):
                   result)
 
 
+def display_color(value):
+    """Use the user's compact coat-color labels in the workbook."""
+    if not isinstance(value, str):
+        return value
+    return {'dark bay or brown': 'DK Bay', 'gray or roan': 'Gray',
+            'dk bay': 'DK Bay'}.get(value.strip().casefold(), value)
+
+
 def text(cell, value):
     # Scraped text must remain text, including formula-looking horse names.
     cell.value = value
@@ -47,6 +55,8 @@ def styled_row(target, row, values, source, source_row):
     for col, value in enumerate(values, 1):
         if 6 <= col <= 14:
             value = title_case_details(value)
+        if col == 9:
+            value = display_color(value)
         cell = target.cell(row, col)
         original = source.cell(source_row, min(col, 14))
         cell.font = copy(original.font)
