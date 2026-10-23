@@ -1,0 +1,30 @@
+name: Dependency Review
+
+on:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      base_ref:
+        description: Base commit SHA to compare with this workflow's commit
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  dependency-review:
+    name: Review dependency changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Check newly introduced vulnerabilities
+        uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          base-ref: ${{ github.event.pull_request.base.sha || inputs.base_ref }}
+          head-ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fail-on-severity: high
+          comment-summary-in-pr: never

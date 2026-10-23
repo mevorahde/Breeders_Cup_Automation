@@ -9,6 +9,9 @@ from breeders_cup.core import prepare, last_race_before
 from breeders_cup.workbook import generate
 
 ROOT = Path(__file__).resolve().parents[1]
+requires_template = unittest.skipUnless(
+    (ROOT / 'templates/2024 Breeders Cup Final.xlsx').is_file(),
+    'Private Excel reference template is not installed')
 
 
 class PipelineTests(unittest.TestCase):
@@ -41,6 +44,7 @@ class PipelineTests(unittest.TestCase):
                    {'date': '2026-10-01', 'name': 'Cancelled', 'status': 'cancelled'}]
         self.assertEqual(last_race_before(history, '2026-10-31')['name'], 'Prior')
 
+    @requires_template
     def test_workbook_layout_overage_and_no_overwrite(self):
         template = ROOT / 'templates/2024 Breeders Cup Final.xlsx'
         self.assertTrue(template.exists(), 'Reference template must be installed')
@@ -73,6 +77,7 @@ class PipelineTests(unittest.TestCase):
             with self.assertRaises(FileExistsError):
                 generate(template, self.data, target)
 
+    @requires_template
     def test_test_generation_caps_each_race_and_keeps_overage(self):
         seed=copy.deepcopy(self.data['horses'][0])
         seed['jockey']='A Confirmed Rider With A Long Name'

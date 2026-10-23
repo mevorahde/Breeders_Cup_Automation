@@ -8,9 +8,13 @@ from breeders_cup.core import prepare
 from breeders_cup.workbook import generate
 
 ROOT = Path(__file__).resolve().parents[1]
+requires_template = unittest.skipUnless(
+    (ROOT / 'templates/2024 Breeders Cup Final.xlsx').is_file(),
+    'Private Excel reference template is not installed')
 
 
 class YearlyTests(unittest.TestCase):
+    @requires_template
     def test_early_research_without_schedule_and_future_year_isolation(self):
         data = json.loads((ROOT / 'examples/early-2026-demo.json').read_text())
         self.assertEqual(prepare(data)[2], [])
@@ -37,6 +41,7 @@ class YearlyTests(unittest.TestCase):
             w.close()
             self.assertEqual(first.read_bytes(), unchanged)
 
+    @requires_template
     def test_assigned_and_unassigned_horses_remain_in_overage(self):
         data = json.loads((ROOT / 'examples/demo.json').read_text())
         data['horses'].append({'id': 'pending', 'name': 'Pending Horse', 'source_url': 'Synthetic'})

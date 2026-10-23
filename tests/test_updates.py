@@ -13,6 +13,9 @@ from breeders_cup.updates import upsert,save_state,merge_research
 from breeders_cup.workbook import arrange_columns
 
 ROOT=Path(__file__).resolve().parents[1]
+requires_template = unittest.skipUnless(
+    (ROOT / 'templates/2024 Breeders Cup Final.xlsx').is_file(),
+    'Private Excel reference template is not installed')
 
 
 class UpdateTests(unittest.TestCase):
@@ -20,6 +23,7 @@ class UpdateTests(unittest.TestCase):
         self.data=json.loads((ROOT/'examples/demo.json').read_text())
         self.template=ROOT/'templates/2024 Breeders Cup Final.xlsx'
 
+    @requires_template
     def test_create_then_refresh_preserves_picks_results_and_summary(self):
         with tempfile.TemporaryDirectory(dir=ROOT/'tests') as tmp:
             target=Path(tmp)/'generated/Breeders Cup 2026.xlsx'
@@ -53,6 +57,7 @@ class UpdateTests(unittest.TestCase):
             self.assertTrue((Path(tmp)/'data/state/2026.json').exists())
             self.assertTrue((Path(tmp)/'data/reports/2026.json').exists())
 
+    @requires_template
     def test_disappearing_picked_entry_is_retained_not_inferred_scratched(self):
         with tempfile.TemporaryDirectory(dir=ROOT/'tests') as tmp:
             target=Path(tmp)/'Breeders Cup 2026.xlsx'
@@ -76,6 +81,7 @@ class UpdateTests(unittest.TestCase):
         new=copy.deepcopy(self.data);new['horses'][0]['father']='Different sire'
         self.assertNotIn('grandfathers',merge_research(new,old)['horses'][0])
 
+    @requires_template
     def test_default_cli_recreates_generated_and_keeps_one_workbook(self):
         from breeders_cup.cli import main
         with tempfile.TemporaryDirectory(dir=ROOT/'tests') as tmp,ExitStack() as stack:
@@ -98,6 +104,7 @@ class UpdateTests(unittest.TestCase):
             w=load_workbook(target);self.assertEqual(w['2026']['E3'].value,'DE');w.close()
             self.assertTrue((folder/'data/state/2026.json').exists())
 
+    @requires_template
     def test_saturday_preserves_friday_rows_and_summary_but_refreshes_saturday(self):
         data=copy.deepcopy(self.data)
         data['races'][0]['date']='2026-10-30'
@@ -142,6 +149,7 @@ class UpdateTests(unittest.TestCase):
             self.assertTrue(any(w['2026'].cell(r[0].row,20).value=='demo-turf' for r in w['2026']))
             w.close()
 
+    @requires_template
     def test_same_day_stays_live_and_friday_only_overage_is_frozen_next_day(self):
         data=copy.deepcopy(self.data)
         data['races'][0]['date']='2026-10-30'

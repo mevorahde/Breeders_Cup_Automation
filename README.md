@@ -1,5 +1,7 @@
 # Breeders Cup Automation
 
+[![CI](https://github.com/mevorahde/Breeders_Cup_Automation/actions/workflows/ci.yml/badge.svg)](https://github.com/mevorahde/Breeders_Cup_Automation/actions/workflows/ci.yml)
+
 ## First-time setup after cloning
 
 Requires Python 3.11 or newer on Windows.
@@ -92,6 +94,11 @@ America/Los_Angeles, configured in `.github/dependabot.yml`. Version updates
 are grouped into a `python-dependencies` pull request, with at most five open
 version-update PRs. Dependabot alerts and security-fix PRs are enabled on GitHub.
 Review and merge updates manually; automatic merging is not configured.
+
+GitHub Actions also checks updates to the workflow actions themselves through
+Dependabot. Dependency Review runs on pull requests and blocks newly introduced
+high or critical vulnerabilities. It can also be started manually with a base
+commit SHA for comparison.
 
 ## Updating an existing workbook
 
@@ -231,6 +238,13 @@ The `demo-build` CLI also creates `.data.json` and `.report.json` sidecars next
 to its chosen output.
 
 ## Tests
+
+GitHub Actions runs the public tests on Windows and Linux with Python 3.11 and
+3.13 for pull requests and pushes to `main`. Tests use committed fixtures;
+they do not scrape live sites or require credentials. Nine workbook integration
+tests are explicitly skipped when the private reference template is absent.
+Installing the reference template locally enables those tests automatically.
+Public CI does not verify the private workbook layout or native Excel AutoFit.
 
 ```powershell
 .\.venv\Scripts\python.exe -m unittest discover -s tests -q
