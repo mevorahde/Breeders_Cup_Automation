@@ -136,8 +136,11 @@ and sorts horses numerically by published post position. Overage is the complete
 alphabetical horse registry. Both include ancestry and Other Ancestors matches,
 confirmed Cup jockeys when verified, and fitted column widths. Each tab sizes
 its columns to its own longest displayed value, allowing widths to shrink as
-well as expand. Windows runs measure the actual font text, rather than retaining
-wider template widths. The annual sheet
+well as expand. Windows runs use installed desktop Excel's native AutoFit
+on a private copy, then apply only the measured widths. Rows remain uniformly
+12 points high with wrapping disabled. If Excel is unavailable (including
+scheduler sessions where Excel cannot start), measured font widths are used
+as a fallback. The annual sheet
 ends with the 2024-style RESULTS SUMMARY. DE/H picks and awards are entered by hand.
 
 The nine unique personal famous-ancestor names are in

@@ -1,6 +1,93 @@
 """Measure displayed text so Excel columns can shrink as well as expand."""
 from functools import lru_cache
 import sys
+import json
+import os
+from pathlib import Path
+import subprocess
+import tempfile
+import warnings
+
+
+def excel_autofit(book):
+    """Read native Excel AutoFit widths from a private, read-only workbook copy.
+
+    Excel never saves the copy or opens the user's workbook. Only the measured
+    widths are applied, preserving workbook values, formulas and manual picks.
+    """
+    if sys.platform != 'win32':
+        return False
+    script = r'''
+$ErrorActionPreference = 'Stop'
+$excel = $null
+$workbook = $null
+try {
+    if ($null -eq [Type]::GetTypeFromProgID('Excel.Application')) {
+        Write-Output '{"available":false}'
+        exit 0
+    }
+    $excel = New-Object -ComObject Excel.Application
+    $excel.Visible = $false
+    $excel.DisplayAlerts = $false
+    $excel.AskToUpdateLinks = $false
+    $excel.EnableEvents = $false
+    $excel.AutomationSecurity = 3
+    $workbook = $excel.Workbooks.Open($env:BC_AUTOFIT_INPUT, 0, $true)
+    $excel.Calculation = -4135
+    $widths = @{}
+    foreach ($sheet in $workbook.Worksheets) {
+        $range = $sheet.Range('A:O')
+        $range.WrapText = $false
+        $range.Columns.AutoFit() | Out-Null
+        $values = @()
+        for ($column = 1; $column -le 15; $column++) {
+            $values += [double]$sheet.Columns.Item($column).ColumnWidth
+        }
+        $widths[$sheet.Name] = $values
+        [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($range)
+        [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($sheet)
+    }
+    @{available=$true; widths=$widths} | ConvertTo-Json -Depth 4 -Compress
+} finally {
+    if ($null -ne $workbook) {
+        $workbook.Close($false)
+        [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($workbook)
+    }
+    if ($null -ne $excel) {
+        $excel.Quit()
+        [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($excel)
+    }
+}
+'''
+    with tempfile.TemporaryDirectory(prefix='breeders-autofit-') as directory:
+        source=Path(directory)/'measure.xlsx'
+        book.save(source)
+        environment=os.environ.copy()
+        environment['BC_AUTOFIT_INPUT']=str(source)
+        script_path=Path(directory)/'autofit.ps1'
+        script_path.write_text(script,encoding='utf-8-sig')
+        try:
+            result=subprocess.run(['powershell.exe','-NoProfile','-NonInteractive',
+                                   '-ExecutionPolicy','Bypass','-File',str(script_path)],env=environment,
+                                  capture_output=True,text=True,timeout=60,
+                                  creationflags=subprocess.CREATE_NO_WINDOW)
+            if result.returncode:
+                raise RuntimeError(result.stderr.strip())
+            measurements=json.loads(result.stdout)
+            if not measurements['available']:
+                return False
+            widths=measurements['widths']
+            for sheet in book:
+                values=widths[sheet.title]
+                if len(values)!=15 or any(not 0<float(v)<=255 for v in values):
+                    raise ValueError('Invalid Excel AutoFit widths')
+            for sheet in book:
+                for col,width in enumerate(widths[sheet.title],1):
+                    sheet.column_dimensions[sheet.cell(1,col).column_letter].width=float(width)
+            return True
+        except (OSError,ValueError,RuntimeError,subprocess.TimeoutExpired) as error:
+            warnings.warn(f'Excel AutoFit unavailable; using measured widths: {error}',RuntimeWarning)
+            return False
 
 
 @lru_cache(maxsize=16384)

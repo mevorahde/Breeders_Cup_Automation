@@ -90,7 +90,9 @@ class PipelineTests(unittest.TestCase):
             w=load_workbook(target)
             self.assertEqual(w['Overage'].max_row,19)
             self.assertEqual(w['Overage']['H2'].value,seed['jockey'])
-            self.assertGreater(w['Overage'].column_dimensions['H'].width,25)
+            self.assertGreater(w['Overage'].column_dimensions['H'].width,20)
+            self.assertTrue(all(w['Overage'].row_dimensions[r].height==12 for r in range(1,20)))
+            self.assertFalse(any(c.alignment.wrap_text for row in w['Overage'] for c in row[:15]))
             self.assertTrue(all(w['Overage'].column_dimensions[c].bestFit for c in 'ABCDEFGHIJKLMNO'))
             s=w['2026']
             start=next(r[0].row for r in s if r[0].value=='RESULTS SUMMARY')

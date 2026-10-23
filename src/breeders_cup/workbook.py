@@ -8,7 +8,7 @@ from openpyxl.styles import Alignment
 from openpyxl.formula.translate import Translator
 from .core import FIELDS, prepare, famous_ancestors, post_order
 from .famous_horses import FAMOUS_HORSES
-from .column_fit import fitted_width
+from .column_fit import fitted_width, excel_autofit
 
 LEGACY_HEADERS = ['BC Race', 'Post', 'Result', 'Odds', 'Pick', 'Name', 'Jockey',
            'Trainer', 'Color', 'Last Previous Race', 'Father', 'Grandfather(s)',
@@ -163,21 +163,22 @@ def results_summary(sheet, row, races, source):
         sheet[f'{col}{low}']=f'=IF(COUNT({col}{first}:{col}{last})=0,"",SUM({col}{first}:{col}{last}))'
 
 
-def fit_columns(sheet,overage):
+def fit_columns(sheet,overage,*,native=True):
     """Fit each view to its own text, allowing old/template widths to shrink."""
     for target in (sheet,overage):
-        for row in target.iter_rows(min_row=2):
-            if target.cell(row[0].row,19).value:
-                target.row_dimensions[row[0].row].height=12
-                for cell in row[:15]:
-                    alignment=copy(cell.alignment)
-                    alignment.wrap_text=False
-                    cell.alignment=alignment
+        for row in target.iter_rows():
+            target.row_dimensions[row[0].row].height=12
+            for cell in row[:15]:
+                alignment=copy(cell.alignment)
+                alignment.wrap_text=False
+                cell.alignment=alignment
         for col in range(1,16):
             letter=target.cell(1,col).column_letter
             target.column_dimensions[letter].width=fitted_width(
                 [row[0] for row in target.iter_rows(min_col=col,max_col=col)])
             target.column_dimensions[letter].bestFit=True
+    if native:
+        excel_autofit(sheet.parent)
 
 
 def generate(template, data, output, final=False, test_generation=False, *, _legacy_layout=False):
@@ -286,7 +287,7 @@ def generate(template, data, output, final=False, test_generation=False, *, _leg
     # width at the retained nine-point template font and save explicit widths.
     if not _legacy_layout:
         arrange_columns(result)
-    fit_columns(sheet,overage)
+    fit_columns(sheet,overage,native=not _legacy_layout)
     output.parent.mkdir(parents=True, exist_ok=True)
     # Exclusive creation also protects against another run creating the same output.
     with output.open('xb') as stream:
