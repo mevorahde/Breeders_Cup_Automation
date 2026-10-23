@@ -2,6 +2,7 @@
 from copy import copy
 from datetime import date
 from pathlib import Path
+import re
 from openpyxl import Workbook, load_workbook
 from openpyxl.styles import Alignment
 from .core import FIELDS, prepare, famous_ancestors, post_order
@@ -11,6 +12,27 @@ from .column_fit import fitted_width
 HEADERS = ['BC Race', 'Post', 'Result', 'Odds', 'Pick', 'Name', 'Jockey',
            'Trainer', 'Color', 'Last Previous Race', 'Father', 'Grandfather(s)',
            'Great Grandfather(s)', 'Other Ancestors', 'Date of Birth']
+
+
+def title_case_details(value):
+    """Title-case display text, retaining country codes and name punctuation."""
+    if not isinstance(value, str):
+        return value
+    countries = {'USA', 'GB', 'IRE', 'FR', 'GER', 'JPN', 'AUS', 'NZ', 'CAN',
+                 'ARG', 'BRZ', 'CHI', 'SAF', 'ITY', 'UAE', 'KSA', 'URU', 'PER'}
+    def word(match):
+        token = match.group()
+        if token in {'SCR', 'AE'}:
+            return token
+        # Preserve established internal capitals such as McKinzie and Le Havre.
+        if not (token.isupper() or token.islower()):
+            return token
+        titled = token.title()
+        return re.sub(r"(['’])S$", r"\1s", titled)
+    result = re.sub(r"[^\W\d_]+(?:['’][^\W\d_]+)*", word, value)
+    return re.sub(r'\(([A-Za-z]+)\)',
+                  lambda m: '(' + (m[1].upper() if m[1].upper() in countries else m[1]) + ')',
+                  result)
 
 
 def text(cell, value):
@@ -23,6 +45,8 @@ def text(cell, value):
 def styled_row(target, row, values, source, source_row):
     target.row_dimensions[row].height = source.row_dimensions[source_row].height
     for col, value in enumerate(values, 1):
+        if 6 <= col <= 14:
+            value = title_case_details(value)
         cell = target.cell(row, col)
         original = source.cell(source_row, min(col, 14))
         cell.font = copy(original.font)

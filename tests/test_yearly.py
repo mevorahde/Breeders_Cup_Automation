@@ -25,7 +25,7 @@ class YearlyTests(unittest.TestCase):
             self.assertEqual(w.sheetnames, ['2026', 'Overage'])
             self.assertEqual(w['2026'].max_row, 1)
             self.assertEqual([w['Overage'].cell(r, 6).value for r in range(2, 5)],
-                             ['DEMO Alpha', 'DEMO Beta', 'DEMO Charlie'])
+                             ['Demo Alpha', 'Demo Beta', 'Demo Charlie'])
             self.assertTrue(all(w['Overage'].cell(r, 1).value is None for r in range(2, 5)))
             self.assertEqual(w['Overage']['I2'].value, 'Bay')
             w.close()

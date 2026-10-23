@@ -40,7 +40,7 @@ class UpdateTests(unittest.TestCase):
             w=load_workbook(target);s=w['2026']
             row=next(r for r in s if s.cell(r[0].row,19).value=='demo-alpha' and s.cell(r[0].row,20).value=='demo-classic')
             self.assertEqual([row[c-1].value for c in (2,3,4,5)],[4,2,'SCR','DE'])
-            self.assertTrue(any(r[4].value=='H' and r[5].value=='DEMO Alpha' for r in w['Overage']))
+            self.assertTrue(any(r[4].value=='H' and r[5].value=='Demo Alpha' for r in w['Overage']))
             header=next(r[0].row for r in s if r[0].value=='RESULTS SUMMARY')
             self.assertEqual(s.cell(header+1,2).value,7)
             w.close()
