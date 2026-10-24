@@ -170,7 +170,7 @@ def fit_columns(sheet,overage,*,native=True):
             target.row_dimensions[row[0].row].height=12
             for cell in row[:15]:
                 font=copy(cell.font)
-                font.name='Garamond'
+                font.name='Arial Narrow'
                 font.sz=8
                 cell.font=font
                 alignment=copy(cell.alignment)

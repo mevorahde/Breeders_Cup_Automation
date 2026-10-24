@@ -71,7 +71,7 @@ class PipelineTests(unittest.TestCase):
             self.assertTrue(all(w[tab].column_dimensions['L'].width > 0 for tab in ('2026', 'Overage')))
             self.assertEqual(w['2026'].row_dimensions[3].height, 12)
             reference = load_workbook(template)
-            self.assertEqual(w['2026']['G3'].font.name, 'Garamond')
+            self.assertEqual(w['2026']['G3'].font.name, 'Arial Narrow')
             self.assertEqual(w['2026']['G3'].font.sz, 8)
             self.assertEqual(w['2026']['G3'].font.b, reference['2024']['F5'].font.b)
             reference.close()

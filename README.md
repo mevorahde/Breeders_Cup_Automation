@@ -164,7 +164,7 @@ ends with the 2024-style RESULTS SUMMARY. DE/H picks and awards are entered by h
 
 ### Display formatting
 
-All visible cells use **Garamond, 8 point**, retaining the template's bold text
+All visible cells use **Arial Narrow, 8 point**, retaining the template's bold text
 and colors. Column widths are fitted after applying the font.
 
 Both the annual tab and Overage use this visible column order:
