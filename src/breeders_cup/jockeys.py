@@ -6,7 +6,7 @@ from datetime import datetime,timezone,date
 from urllib.parse import urlparse
 from xml.etree import ElementTree
 from bs4 import BeautifulSoup
-from .collector import OFFICIAL,parse_official
+from .collector import OFFICIAL,read_official
 from .sources import fetch
 from .pedigree import normalized
 
@@ -56,7 +56,9 @@ def refresh_jockeys(data):
     report={'policy':'Confirmed Breeders Cup riders only; no last-race substitutions',
             'retrieved_at':retrieved,'official_source':OFFICIAL,'errors':[],'announcements':[]}
     try:
-        fresh=parse_official(fetch(OFFICIAL),data['year'],retrieved)
+        fresh,_=read_official(data['year'],retrieved)
+        report['official_source']=fresh['official_source']
+        report['source_stage']=fresh['source_stage']
         lookup={h['id']:h for h in fresh['horses']}
         for horse in data['horses']:
             current=lookup.get(horse['id'])

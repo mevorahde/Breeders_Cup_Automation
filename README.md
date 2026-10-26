@@ -142,6 +142,16 @@ The 2024 reference workbook is never modified.
 
 ## Workbook content
 
+The collector checks the official final-entry endpoint before the pre-entry
+endpoint. It uses the feed's declared `horseType`, rather than the URL, to decide
+whether positions are actual draw positions. Once the current-year feed changes
+to final entries, the normal batch run imports those race assignments, posts,
+morning-line odds and declared riders automatically. The batch log prints the
+source stage and counts of declared posts and confirmed jockeys, and warns when
+the official response is still pre-entries. The report records both endpoint
+checks. A search result labeled with the current year is not sufficient evidence
+to import an unrelated or historical field.
+
 The script discovers the current-year official race-order announcement on
 BreedersCup.com and reads its published schedule tables for track race numbers
 and Eastern post times. It matches exact championship names and validates all

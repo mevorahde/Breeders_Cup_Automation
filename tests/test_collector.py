@@ -1,7 +1,8 @@
 import json
 from pathlib import Path
 import unittest
-from breeders_cup.collector import parse_official, official_identity
+from unittest.mock import patch
+from breeders_cup.collector import parse_official, official_identity, read_official, OFFICIAL, OFFICIAL_ENTRIES
 
 
 class CollectorTests(unittest.TestCase):
@@ -50,6 +51,42 @@ class CollectorTests(unittest.TestCase):
         cards['horseType'] = 'pre-entries'
         cards['races'][0]['horses'][0]['races'][0]['postPosition'] = '7'
         self.assertTrue(all('post' not in e for e in self.parse()['entries']))
+
+    def test_final_entries_import_actual_posts_and_riders(self):
+        cards=self.fixture['props']['pageProps']['blocks'][0]['horseCards']
+        cards['horseType']='entries'
+        raw=cards['races'][0]['horses'][0]
+        raw['races'][0]['postPosition']='7'
+        raw['jockeyName']='Declared Rider'
+        data=self.parse()
+        entry=next(e for e in data['entries'] if e['horse_id']==raw['uid'])
+        self.assertEqual(entry['post'],'7')
+        self.assertEqual(entry['jockey'],'Declared Rider')
+        self.assertEqual(data['source_stage'],'entries')
+
+    def test_final_url_serving_preentries_is_not_treated_as_draw(self):
+        html='<script id="__NEXT_DATA__">'+json.dumps(self.fixture)+'</script>'
+        with patch('breeders_cup.collector.fetch',return_value=html) as fetch:
+            data,_=read_official(2026,'2026-10-26')
+        self.assertEqual(data['source_stage'],'pre-entries')
+        self.assertEqual(data['official_source'],OFFICIAL)
+        self.assertEqual(fetch.call_count,2)
+        self.assertEqual(data['source_checks'][0]['url'],OFFICIAL_ENTRIES)
+
+    def test_final_feed_is_preferred_and_wrong_year_falls_back(self):
+        cards=self.fixture['props']['pageProps']['blocks'][0]['horseCards']
+        cards['horseType']='entries'
+        html='<script id="__NEXT_DATA__">'+json.dumps(self.fixture)+'</script>'
+        with patch('breeders_cup.collector.fetch',return_value=html) as fetch:
+            data,_=read_official(2026,'2026-10-26')
+        self.assertEqual(data['official_source'],OFFICIAL_ENTRIES)
+        self.assertEqual(fetch.call_count,1)
+        cards['races'][0]['raceDetails']['date']='2025-11-01T22:00:00Z'
+        wrong='<script id="__NEXT_DATA__">'+json.dumps(self.fixture)+'</script>'
+        with patch('breeders_cup.collector.fetch',side_effect=[wrong,html]):
+            data,_=read_official(2026,'2026-10-26')
+        self.assertEqual(data['official_source'],OFFICIAL)
+        self.assertIn('error',data['source_checks'][0])
 
     def test_stale_horse_record_is_reported_and_excluded(self):
         self.fixture['props']['pageProps']['blocks'][0]['horseCards']['races'][0]['horses'][0]['year'] = 2025

@@ -8,6 +8,7 @@ from .sources import fetch, SOURCES
 from .core import last_race_before, prepare
 
 OFFICIAL = 'https://www.breederscup.com/horses/pre-entries/classic'
+OFFICIAL_ENTRIES = 'https://www.breederscup.com/horses/entries/classic'
 
 
 def official_identity(raw, url):
@@ -68,7 +69,7 @@ def source_date(value):
     return datetime.strptime(value, '%B, %d %Y %H:%M:%S').date().isoformat()
 
 
-def parse_official(html, year, retrieved_at):
+def parse_official(html, year, retrieved_at, source_url=OFFICIAL):
     soup = BeautifulSoup(html, 'html.parser')
     script = soup.find('script', id='__NEXT_DATA__')
     if script is None:
@@ -97,7 +98,7 @@ def parse_official(html, year, retrieved_at):
         rid = race['uid']
         name = details['bcType']
         races.append({'id': rid, 'name': name, 'date': day.isoformat(), 'number': None,
-                      'scheduled_at': stamp.isoformat(), 'source_url': OFFICIAL,
+                      'scheduled_at': stamp.isoformat(), 'source_url': source_url,
                       'retrieved_at': retrieved_at})
         for raw in race['horses']:
             if raw.get('year') != year:
@@ -105,7 +106,7 @@ def parse_official(html, year, retrieved_at):
                 continue
             withdrawn=(raw['horseName'].casefold().strip(), name.casefold()) in excluded
             hid = raw['uid']
-            url = urljoin(OFFICIAL, raw['url'])
+            url = urljoin(source_url, raw['url'])
             record = {'id': hid, 'name': raw.get('pageTitle') or raw['horseName'],
                       'source_url': url, 'retrieved_at': retrieved_at,
                       'trainer': raw.get('trainer') or None, 'jockey': raw.get('jockeyName') or None,
@@ -138,6 +139,8 @@ def parse_official(html, year, retrieved_at):
             horses[hid]['possible_races'].append(name)
             engagement = next((r for r in raw.get('races', []) if r['uid'] == rid), {})
             entry = {'horse_id': hid, 'race_id': rid}
+            if record.get('jockey'):
+                entry['jockey']=record['jockey']
             if engagement.get('scratched') or withdrawn:
                 entry['post'] = engagement.get('postPosition') if cards[0].get('horseType')=='entries' and engagement.get('postPosition') else 'SCR'
                 entry['scratched']=True
@@ -153,15 +156,38 @@ def parse_official(html, year, retrieved_at):
         raise ValueError(f'Incomplete championship source: {len(races)} races, {len(horses)} horses')
     data = {'year': year, 'races': races, 'horses': list(horses.values()),
             'entries': entries, 'assignments': {}, 'retrieved_at': retrieved_at,
-            'withdrawals': withdrawals, 'excluded_wrong_year_records': skipped}
+            'withdrawals': withdrawals, 'excluded_wrong_year_records': skipped,
+            'official_source': source_url, 'source_stage':cards[0].get('horseType','pre-entries')}
     prepare(data)
     return data
 
 
+def read_official(year,retrieved_at):
+    """Prefer declared entries; never infer final status from a URL alone."""
+    candidates=[]
+    attempts=[]
+    for url in (OFFICIAL_ENTRIES,OFFICIAL):
+        try:
+            html=fetch(url)
+            data=parse_official(html,year,retrieved_at,source_url=url)
+            attempts.append({'url':url,'stage':data['source_stage'],
+                             'post_positions':sum(bool(e.get('post')) and e.get('post')!='SCR' for e in data['entries'])})
+            if data['source_stage']=='entries':
+                data['source_checks']=attempts
+                return data,html
+            candidates.append((data,html))
+        except Exception as exc:
+            attempts.append({'url':url,'error':str(exc)})
+    if candidates:
+        data,html=candidates[-1]
+        data['source_checks']=attempts
+        return data,html
+    raise ValueError('No valid current-year official entry feed: '+json.dumps(attempts))
+
+
 def collect(year):
     retrieved = datetime.now(timezone.utc).isoformat()
-    html = fetch(OFFICIAL)
-    data = parse_official(html, year, retrieved)
+    data,html = read_official(year,retrieved)
     diagnostics = {}
     for name in ('bloodhorse', 'horseracingnation', 'equineline'):
         try:
@@ -173,7 +199,9 @@ def collect(year):
         except Exception as exc:
             diagnostics[name] = f'Unavailable: {type(exc).__name__}: {exc}'
     data['collection_report'] = {
-        'sources': diagnostics, 'official_source': OFFICIAL,
+        'sources': diagnostics, 'official_source': data['official_source'],
+        'source_stage':data['source_stage'],'source_checks':data['source_checks'],
+        'declared_post_positions':sum(bool(e.get('post')) and e.get('post')!='SCR' for e in data['entries']),
         'horse_count': len(data['horses']), 'race_entry_count': len(data['entries']),
         'excluded_wrong_year_records': data['excluded_wrong_year_records'],
         'missing_field_counts': {f: sum(not h.get(f) for h in data['horses']) for f in
@@ -185,4 +213,7 @@ def collect(year):
                        'Last race means latest completed start in the official supplied history, before the Cup date.',
                        'Deeper pedigree enrichment is pending; no inferred ancestors.']}
     from .schedule import enrich_schedule
+    if data['source_stage']=='entries':
+        data['collection_report']['limitations']=[s for s in data['collection_report']['limitations']
+            if not s.startswith(('Pre-entries are possible','Pre-entry payload position'))]
     return enrich_schedule(data,html)
