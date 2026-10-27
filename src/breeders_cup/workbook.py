@@ -79,10 +79,23 @@ def display_color(value):
 
 
 def display_last_race(value):
-    """Keep the race and finish, omitting dates and periods."""
+    """Keep the finish and display the name after Presented By when supplied."""
     if not isinstance(value, str):
         return value
-    return re.sub(r'\s*\(\s*\d{4}-\d{2}-\d{2}\s*\)', '', value).replace('.', '').strip()
+    value = re.sub(r'\s*\(\s*\d{4}-\d{2}-\d{2}\s*\)', '', value).replace('.', '').strip()
+    # Split at the final finish separator so sponsor text cannot consume it.
+    race, separator, finish = value.rpartition(':')
+    if separator and re.fullmatch(r'\s*\d+\s*', finish):
+        race = re.sub(r'^.*?\bpresented\s+by\s+', '', race, flags=re.I).strip()
+        value = f'{race}: {finish.strip()}'
+    # The official feed includes the sponsor's advertising in this title.
+    # Match the complete known title, rather than guessing where arbitrary
+    # race names begin. Keep the finish and the original source data intact.
+    value = re.sub(
+        r"^Ladbrokes\s+['\"“]?New Customers Get 50/1 Old Firm Offer['\"”]?\s+"
+        r'Firth Of Clyde Challenge Cup(?=\s*:\s*\d+\s*$)',
+        'Firth Of Clyde', value, flags=re.I)
+    return value
 
 
 def text(cell, value):
