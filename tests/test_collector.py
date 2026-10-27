@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 import unittest
 from unittest.mock import patch
-from breeders_cup.collector import parse_official, official_identity, read_official, OFFICIAL, OFFICIAL_ENTRIES
+from breeders_cup.collector import parse_official, official_identity, official_odds, read_official, OFFICIAL, OFFICIAL_ENTRIES
 
 
 class CollectorTests(unittest.TestCase):
@@ -58,11 +58,31 @@ class CollectorTests(unittest.TestCase):
         raw=cards['races'][0]['horses'][0]
         raw['races'][0]['postPosition']='7'
         raw['jockeyName']='Declared Rider'
+        raw['morningLineOdds']=[{'number':5},{'number':2}]
         data=self.parse()
         entry=next(e for e in data['entries'] if e['horse_id']==raw['uid'])
         self.assertEqual(entry['post'],'7')
         self.assertEqual(entry['jockey'],'Declared Rider')
+        self.assertEqual(entry['odds'],'5-2')
         self.assertEqual(data['source_stage'],'entries')
+
+    def test_structured_odds_require_declarations_and_valid_fraction(self):
+        pair=[{'number':30},{'number':1}]
+        self.assertEqual(official_odds(pair,declared=True),'30-1')
+        self.assertIsNone(official_odds(pair))
+        self.assertEqual(official_odds(' 5/2 '),'5-2')
+        for invalid in ([],[{'number':5}], [{'number':5},{'number':0}],
+                        [{'number':True},{'number':1}], [{'other':5},{'number':2}], 'TBA'):
+            self.assertIsNone(official_odds(invalid,declared=True))
+
+    def test_scratch_odds_win_over_published_morning_line(self):
+        cards=self.fixture['props']['pageProps']['blocks'][0]['horseCards']
+        cards['horseType']='entries'
+        raw=cards['races'][0]['horses'][0]
+        raw['morningLineOdds']=[{'number':5},{'number':2}]
+        raw['races'][0]['scratched']=True
+        entry=next(e for e in self.parse()['entries'] if e['horse_id']==raw['uid'])
+        self.assertEqual(entry['odds'],'SCR')
 
     def test_final_url_serving_preentries_is_not_treated_as_draw(self):
         html='<script id="__NEXT_DATA__">'+json.dumps(self.fixture)+'</script>'

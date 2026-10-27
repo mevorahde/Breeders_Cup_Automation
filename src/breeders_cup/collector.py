@@ -69,6 +69,17 @@ def source_date(value):
     return datetime.strptime(value, '%B, %d %Y %H:%M:%S').date().isoformat()
 
 
+def official_odds(value,declared=False):
+    """Decode official text or the declared CMS numerator/denominator pair."""
+    if isinstance(value,str) and re.fullmatch(r'\d+(?:[-/]\d+|\.\d+)?',value.strip()):
+        return value.strip().replace('/','-')
+    if declared and isinstance(value,list) and len(value)==2:
+        numbers=[part.get('number') if isinstance(part,dict) else None for part in value]
+        if all(type(number) is int and number>0 for number in numbers):
+            return f'{numbers[0]}-{numbers[1]}'
+    return None
+
+
 def parse_official(html, year, retrieved_at, source_url=OFFICIAL):
     soup = BeautifulSoup(html, 'html.parser')
     script = soup.find('script', id='__NEXT_DATA__')
@@ -148,9 +159,12 @@ def parse_official(html, year, retrieved_at, source_url=OFFICIAL):
             elif cards[0].get('horseType') == 'entries' and engagement.get('postPosition'):
                 entry['post'] = engagement['postPosition']
             if not entry.get('scratched'):
-                odds=engagement.get('morningLineOdds') or engagement.get('odds') or raw.get('morningLineOdds')
-                if isinstance(odds,str) and re.fullmatch(r'\d+(?:[-/]\d+|\.\d+)?',odds.strip()):
-                    entry['odds']=odds.strip()
+                for value in (engagement.get('morningLineOdds'),engagement.get('odds'),raw.get('morningLineOdds')):
+                    odds=official_odds(value,declared=cards[0].get('horseType')=='entries')
+                    if odds is not None:
+                        entry['odds']=odds
+                        entry.setdefault('field_sources',{})['odds']=source_url
+                        break
             entries.append(entry)
     if len(races) != 14 or not horses:
         raise ValueError(f'Incomplete championship source: {len(races)} races, {len(horses)} horses')
@@ -202,6 +216,7 @@ def collect(year):
         'sources': diagnostics, 'official_source': data['official_source'],
         'source_stage':data['source_stage'],'source_checks':data['source_checks'],
         'declared_post_positions':sum(bool(e.get('post')) and e.get('post')!='SCR' for e in data['entries']),
+        'morning_line_odds':sum(bool(e.get('odds')) and e.get('odds')!='SCR' for e in data['entries']),
         'horse_count': len(data['horses']), 'race_entry_count': len(data['entries']),
         'excluded_wrong_year_records': data['excluded_wrong_year_records'],
         'missing_field_counts': {f: sum(not h.get(f) for h in data['horses']) for f in

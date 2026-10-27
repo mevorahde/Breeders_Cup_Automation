@@ -76,7 +76,8 @@ def main():
             stage=report.get('source_stage','unknown')
             posts=report.get('declared_post_positions',0)
             riders=report.get('jockeys',{}).get('confirmed',sum(bool(h.get('jockey')) for h in data['horses']))
-            print(f'Official feed: {stage}; declared post positions: {posts}; confirmed jockeys: {riders}')
+            odds=report.get('morning_line_odds',0)
+            print(f'Official feed: {stage}; declared post positions: {posts}; confirmed jockeys: {riders}; morning-line odds: {odds}')
             if stage=='pre-entries':
                 print('NOTICE: Official final declarations are not available in the fetched feed. Pre-entry positions are not imported as draw positions.')
             print(f'Research: data/state/{args.year}.json; report: data/reports/{args.year}.json')

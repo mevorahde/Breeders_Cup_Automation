@@ -152,6 +152,12 @@ the official response is still pre-entries. The report records both endpoint
 checks. A search result labeled with the current year is not sufficient evidence
 to import an unrelated or historical field.
 
+Official morning-line odds are read from text or the declared feed's structured
+numerator/denominator pair and displayed as fractions such as `5-2`. Empty or
+invalid pairs remain unavailable; confirmed scratches still display `SCR`.
+Morning-line odds are published estimates, not live betting odds. The batch log
+and report include the number of entries with morning-line odds imported.
+
 The script discovers the current-year official race-order announcement on
 BreedersCup.com and reads its published schedule tables for track race numbers
 and Eastern post times. It matches exact championship names and validates all
