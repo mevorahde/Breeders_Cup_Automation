@@ -88,6 +88,9 @@ def freeze_past_races(data,old,previous,as_of):
             entry={'horse_id':hid,'race_id':rid}
             for col,field in ((2,'post'),(3,'result'),(4,'odds'),(7,'jockey')):
                 entry[field]=row[col-1].value
+            if len(row)>=23:
+                for col,field in ((21,'odds_type'),(22,'odds_as_of'),(23,'odds_source_url')):
+                    if row[col-1].value is not None:entry[field]=row[col-1].value
             if str(entry.get('odds','')).upper()=='SCR':
                 entry['scratched']=True
             data['entries'].append(entry)
@@ -107,7 +110,7 @@ def restore_past_rows(old,new,locked,frozen_overage):
             raise ValueError('Update would change a past-race field; workbook was not changed')
         pairs=[(block['header'],rows[0][0].row-1)]+[(a[0].row,b[0].row) for a,b in zip(block['rows'],rows)]
         for source_row,target_row in pairs:
-            for col in range(1,21):
+            for col in range(1,24):
                 if col<19 or old_sheet.cell(source_row,col).value is not None:
                     copy_cell(old_sheet.cell(source_row,col),new_sheet.cell(target_row,col))
             new_sheet.row_dimensions[target_row].height=old_sheet.row_dimensions[source_row].height
@@ -125,7 +128,7 @@ def restore_past_rows(old,new,locked,frozen_overage):
         source=next((r for r in old['Overage'].iter_rows(min_row=2) if old['Overage'].cell(r[0].row,19).value==hid or
                      (target and normalized(r[5].value)==normalized(target[5].value))),None)
         if source and target:
-            for col in range(1,21):
+            for col in range(1,24):
                 if col<19 or old['Overage'].cell(source[0].row,col).value is not None:
                     copy_cell(old['Overage'].cell(source[0].row,col),new['Overage'].cell(target[0].row,col))
 

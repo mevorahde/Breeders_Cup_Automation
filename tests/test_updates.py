@@ -94,7 +94,7 @@ class UpdateTests(unittest.TestCase):
             stack.enter_context(patch('sys.argv',['breeders-cup']))
             stack.enter_context(patch('breeders_cup.cli.current_year',return_value=2026))
             stack.enter_context(patch('breeders_cup.cli.collect',side_effect=lambda year:copy.deepcopy(self.data)))
-            for name in ('repair_incomplete_identities','enrich','enrich_remaining','enrich_query','annotate_famous','refresh_jockeys'):
+            for name in ('repair_incomplete_identities','enrich','enrich_remaining','enrich_query','annotate_famous','refresh_jockeys','refresh_odds'):
                 stack.enter_context(patch('breeders_cup.cli.'+name,side_effect=lambda data,*args:data))
             self.assertEqual(main(),0)
             target=folder/'generated/Breeders Cup 2026.xlsx'

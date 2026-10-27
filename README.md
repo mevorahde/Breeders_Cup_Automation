@@ -158,6 +158,28 @@ invalid pairs remain unavailable; confirmed scratches still display `SCR`.
 Morning-line odds are published estimates, not live betting odds. The batch log
 and report include the number of entries with morning-line odds imported.
 
+Normal updates also check the public live tote feed used by
+[Keeneland's odds dashboard](https://www.keeneland.com/odds). They use only its
+`live` / UTote section, never the DRF or HRN projected odds. Live values replace
+morning lines only when the track, race date, race number, horse name and program
+number match the official entries, and the feed is active, not marked stale,
+and timestamped within five minutes of the check. Wrong-day data, unavailable
+prices and source errors leave morning lines in place. Missing tote rows do not
+mean a horse is scratched; confirmed scratch markers always take priority.
+
+The dashboard normally provides the current race day's data. Advance wagering
+does not guarantee its live feed will have future cards available. Until a
+matching Breeders' Cup card appears, the workbook continues using morning lines.
+After scheduled post time, a previously verified live snapshot is retained with
+its original timestamp; it is not presented as a fresh quote or final odds.
+
+Odds type, source and timestamp are stored per entry in the research snapshot
+and in hidden workbook columns **U–W**; unhide these to inspect them. The report's
+`odds_refresh` section and batch log summarize live snapshots, morning-line
+fallbacks and retained past-post snapshots. The workbook is a snapshot of a
+batch run, not a continuously updating odds board. Existing completed-day
+protections and manual-pick preservation still apply.
+
 The script discovers the current-year official race-order announcement on
 BreedersCup.com and reads its published schedule tables for track race numbers
 and Eastern post times. It matches exact championship names and validates all

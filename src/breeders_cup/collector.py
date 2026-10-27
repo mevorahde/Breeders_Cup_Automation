@@ -109,6 +109,7 @@ def parse_official(html, year, retrieved_at, source_url=OFFICIAL):
         rid = race['uid']
         name = details['bcType']
         races.append({'id': rid, 'name': name, 'date': day.isoformat(), 'number': None,
+                      'track_name':race['trackDetails'][0]['details'].get('name'),
                       'scheduled_at': stamp.isoformat(), 'source_url': source_url,
                       'retrieved_at': retrieved_at})
         for raw in race['horses']:
@@ -163,6 +164,8 @@ def parse_official(html, year, retrieved_at, source_url=OFFICIAL):
                     odds=official_odds(value,declared=cards[0].get('horseType')=='entries')
                     if odds is not None:
                         entry['odds']=odds
+                        entry['morning_line_odds']=odds
+                        entry.update(odds_type='morning-line',odds_as_of=retrieved_at,odds_source_url=source_url)
                         entry.setdefault('field_sources',{})['odds']=source_url
                         break
             entries.append(entry)

@@ -50,6 +50,7 @@ class PipelineTests(unittest.TestCase):
         self.assertTrue(template.exists(), 'Reference template must be installed')
         self.data['horses'][1]['name'] = '=DEMO formula-looking text'
         self.data['horses'][0]['pedigree_ancestors'] = ['Secretariat']
+        self.data['entries'][0].update(odds_type='morning-line',odds_as_of='2026-10-26T12:00:00+00:00',odds_source_url='official')
         self.data['entries'][1].update(post=10, pick='DE')
         self.data['entries'][2].update(post=2, pick='H')
         (ROOT / 'generated').mkdir(exist_ok=True)
@@ -63,6 +64,9 @@ class PipelineTests(unittest.TestCase):
             self.assertEqual(w['Overage']['G2'].data_type, 's')
             self.assertEqual(w['2026']['A2'].value, 'Saturday 10-31-2026')
             self.assertEqual(w['2026']['F3'].value.year, 2022)
+            self.assertEqual(w['2026']['U3'].value,'morning-line')
+            self.assertEqual(w['2026']['V3'].value,'2026-10-26T12:00:00+00:00')
+            self.assertTrue(all(w['2026'].column_dimensions[c].hidden for c in ('U','V','W')))
             self.assertEqual([w['2026'][f'B{r}'].value for r in (5, 6)], [2, 10])
             self.assertIsNone(w['2026']['E5'].value)
             self.assertIsNone(w['2026']['E6'].value)

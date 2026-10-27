@@ -92,6 +92,11 @@ def text(cell, value):
         cell.data_type = 's'
 
 
+def odds_metadata(sheet,row,entry):
+    for col,field in enumerate(('odds_type','odds_as_of','odds_source_url'),21):
+        text(sheet.cell(row,col),(entry or {}).get(field))
+
+
 def styled_row(target, row, values, source, source_row):
     target.row_dimensions[row].height = source.row_dimensions[source_row].height
     for col, value in enumerate(values, 1):
@@ -240,6 +245,7 @@ def generate(template, data, output, final=False, test_generation=False, *, _leg
             styled_row(sheet, row, values, source, 5)
             text(sheet.cell(row,19),horse['id'])
             text(sheet.cell(row,20),race['id'])
+            odds_metadata(sheet,row,entry)
             row += 1
     if races:
         results_summary(sheet,row,races,source)
@@ -269,6 +275,7 @@ def generate(template, data, output, final=False, test_generation=False, *, _leg
             values[-1] = date.fromisoformat(merged['date_of_birth'])
         styled_row(overage, r, values, source, 5)
         text(overage.cell(r,19),hid)
+        odds_metadata(overage,r,active[0] if len(active)==1 else None)
         for col, value in enumerate((horse['source_url'], horse.get('retrieved_at'),
                                      json.dumps(horse.get('field_sources', {}))), 16):
             text(overage.cell(r, col), value)
@@ -286,6 +293,9 @@ def generate(template, data, output, final=False, test_generation=False, *, _leg
         text(target['T1'],'Race ID')
         target.column_dimensions['S'].hidden=True
         target.column_dimensions['T'].hidden=True
+        for col,label in (('U','Odds Type'),('V','Odds As Of (UTC)'),('W','Odds Source URL')):
+            text(target[f'{col}1'],label)
+            target.column_dimensions[col].hidden=True
         target.print_area = f'A1:O{target.max_row}'
     # Excel's bestFit flag does not calculate a stored width. Estimate the text
     # width at the retained nine-point template font and save explicit widths.

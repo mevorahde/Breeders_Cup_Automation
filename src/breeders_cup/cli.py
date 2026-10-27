@@ -11,6 +11,7 @@ from .netkeiba import enrich_remaining
 from .pedigreequery import enrich_query
 from .famous import annotate_famous
 from .jockeys import refresh_jockeys
+from .live_odds import refresh_odds
 from .demo import prepare_demo
 from .updates import current_year,merge_research,upsert,save_state
 
@@ -68,6 +69,7 @@ def main():
             data=enrich_remaining(data,args.cache)
             data=enrich_query(data,args.cache)
             data=refresh_jockeys(annotate_famous(data,args.cache))
+            data=refresh_odds(data,previous)
             output=args.generated_dir/f'Breeders Cup {args.year}.xlsx'
             data,count=upsert(args.template,data,output,previous=previous)
             save_state(data)
@@ -78,6 +80,8 @@ def main():
             riders=report.get('jockeys',{}).get('confirmed',sum(bool(h.get('jockey')) for h in data['horses']))
             odds=report.get('morning_line_odds',0)
             print(f'Official feed: {stage}; declared post positions: {posts}; confirmed jockeys: {riders}; morning-line odds: {odds}')
+            odds_report=report.get('odds_refresh',{})
+            print(f'Odds used: {odds_report.get("live_entries",0)} live snapshots; {odds_report.get("morning_line_entries",0)} morning lines; {odds_report.get("retained_snapshots",0)} past-post snapshots retained')
             if stage=='pre-entries':
                 print('NOTICE: Official final declarations are not available in the fetched feed. Pre-entry positions are not imported as draw positions.')
             print(f'Research: data/state/{args.year}.json; report: data/reports/{args.year}.json')

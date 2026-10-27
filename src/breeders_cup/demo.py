@@ -18,7 +18,8 @@ def prepare_demo(data,seed=2026):
         rng.shuffle(field)
         for post,entry in enumerate(field,1):
             entry.update(post=post,odds=rng.choice(DEMO_ODDS),result=None,pick=None,
-                         demo_values=True)
+                         demo_values=True,odds_type='demo',odds_as_of=None,
+                         odds_source_url='Generated DEMO value')
             entry.setdefault('field_sources',{}).update(post='Generated DEMO value',odds='Generated DEMO value')
             selected.append(entry)
     result['entries']=selected
